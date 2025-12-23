@@ -1,9 +1,8 @@
 {
-  "name": "react-virtual-scroll",
-  "version": "1.0.0",
+  "name": "react-virtualised-scroll",
+  "version": "1.0.4",
   "description": "High-performance virtualized scroll component for React",
   "license": "MIT",
-
   "repository": {
     "type": "git",
     "url": "https://github.com/executable1210/react-virtual-scroll.git"
@@ -13,11 +12,9 @@
     "name": "exec",
     "url": "https://github.com/executable1210"
   },
-
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -25,9 +22,9 @@
       "require": "./dist/index.cjs"
     }
   },
-
-  "files": ["dist"],
-
+  "files": [
+    "dist"
+  ],
   "keywords": [
     "react",
     "react-component",
@@ -44,18 +41,17 @@
     "frontend",
     "optimization"
   ],
-
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts"
   },
-
   "peerDependencies": {
-    "react": ">=17",
-    "react-dom": ">=17"
+    "react": ">=18 <20",
+    "react-dom": ">=18 <20"
   },
-
   "devDependencies": {
-    "tsup": "^8.0.0",
-    "typescript": "^5.0.0"
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
   }
 }

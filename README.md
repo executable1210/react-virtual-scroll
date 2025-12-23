@@ -1,4 +1,4 @@
-# react-virtual-scroll
+# react-virtualised-scroll
 
 A small, high-performance **virtualized scroll** React component with async loading. It fetches only the visible slice of items (plus a small buffer), measures the item height automatically and provides simple sticky loading indicators for top/bottom fetches.
 
@@ -6,14 +6,15 @@ A small, high-performance **virtualized scroll** React component with async load
 
 * Virtualizes large lists to reduce DOM nodes
 * Skeleton support
+* Multiply layouts support
 * Totally aggresive optimization having large dataset due to virtualization 
 
 ## Install
 
 ```bash
-npm install react-virtual-scroll
+npm install react-virtualised-scroll
 # or
-yarn add react-virtual-scroll
+yarn add react-virtualised-scroll
 ```
 
 ## Types
@@ -86,7 +87,7 @@ export interface VirtualScrollRowProps<T extends Record<string, any>> {
 ```tsx
 import React from 'react';
 
-import { VirtualScroll, VirtualScrollDataLayout, TorrentData } from 'react-virtual-scroll';
+import { VirtualScroll, VirtualScrollDataLayout, TorrentData } from 'react-virtualised-scroll';
 
 // 1. Define your data type
 interface MessageItem {
@@ -220,7 +221,7 @@ import React, {
 import {
   TorrentData,
   VirtualScroll
-} from "@/components/VirtualScroll.tsx";
+} from "react-virtualised-scroll";
 
 interface BaseData { id: number; timestamp: string; }
 interface CardData extends BaseData { title: string; imageUrl: string; likes: number; }
@@ -638,6 +639,9 @@ export default function App() {
 ## Example using VirtualScrollRow
 
 ```tsx
+import { VirtualScrollRow } from 'react-virtualised-scroll';
+import React from "react";
+
 const ItemCard = React.forwardRef<HTMLDivElement, { title: string; color: string }>(
   ({ title, color }, ref) => (
     <div
@@ -763,7 +767,7 @@ export function GalleryExample() {
 
       <div style={{ height: 'calc(100% - 60px)', border: '1px solid #ccc' }}>
         <VirtualScrollRow
-          torrent={mockTorrent}
+          torrent={mockTorrent as any}
 
           layout={{
             key: 'item',
@@ -799,8 +803,7 @@ export function GalleryExample() {
   );
 }
 
-function App() {
-  return (
-    <GalleryExample  />
-);
+export default function App() {
+  return <GalleryExample />;
+}
 ```
