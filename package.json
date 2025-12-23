@@ -1,0 +1,43 @@
+{
+  "name": "react-optimized-scroll",
+  "description": "High-performance virtualized scroll component for React",
+  "version": "1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/executable1210/react-optimized-scroll.git"
+  },
+  "homepage": "https://github.com/executable1210/react-optimized-scroll",
+  "author": {
+    "name": "exec",
+    "url": "https://github.com/executable1210"
+  },
+  "license": "MIT",
+  "keywords": [
+    "react",
+    "react-component",
+    "react-hooks",
+    "virtual-scroll",
+    "virtualized",
+    "windowing",
+    "infinite-scroll",
+    "async-scroll",
+    "lazy-loading",
+    "performance",
+    "large-lists",
+    "list-virtualization",
+    "scroll",
+    "ui",
+    "frontend"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts"
+  },
+  "peerDependencies": {
+    "react": ">=17",
+    "react-dom": ">=17"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}
