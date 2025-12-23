@@ -1,23 +1,37 @@
 {
-  "name": "react-optimized-scroll",
-  "description": "High-performance virtualized scroll component for React",
+  "name": "react-virtual-scroll",
   "version": "1.0.0",
+  "description": "High-performance virtualized scroll component for React",
+  "license": "MIT",
+
   "repository": {
     "type": "git",
-    "url": "https://github.com/executable1210/react-optimized-scroll.git"
+    "url": "https://github.com/executable1210/react-virtual-scroll.git"
   },
-  "homepage": "https://github.com/executable1210/react-optimized-scroll",
+  "homepage": "https://github.com/executable1210/react-virtual-scroll",
   "author": {
     "name": "exec",
     "url": "https://github.com/executable1210"
   },
-  "license": "MIT",
+
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+
+  "files": ["dist"],
+
   "keywords": [
     "react",
     "react-component",
-    "react-hooks",
     "virtual-scroll",
-    "virtualized",
     "windowing",
     "infinite-scroll",
     "async-scroll",
@@ -27,15 +41,19 @@
     "list-virtualization",
     "scroll",
     "ui",
-    "frontend"
+    "frontend",
+    "optimization"
   ],
+
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts"
   },
+
   "peerDependencies": {
     "react": ">=17",
     "react-dom": ">=17"
   },
+
   "devDependencies": {
     "tsup": "^8.0.0",
     "typescript": "^5.0.0"
