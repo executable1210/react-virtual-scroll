@@ -1,4 +1,5 @@
 import React, {
+  CSSProperties,
   ForwardRefExoticComponent,
   ReactNode,
   RefAttributes,
@@ -24,9 +25,20 @@ export interface TorrentData<T> {
   data: T;
 };
 
+export interface VirtualScrollBaseProps {
+  wrapperClasses?: string;
+  wrapperStyle?: CSSProperties;
+
+  containerClasses?: string;
+  containerStyle?: CSSProperties;
+
+  innerContainerClasses?: string;
+  innerContainerStyle?: CSSProperties;
+}
+
 export interface VirtualScrollProps<
   T extends Record<string, any>
-> {
+> extends VirtualScrollBaseProps {
   torrent: (offset: number, size: number) => Promise<TorrentData<T>[]>;
   // elemCount: number;
   layout: { [key: string]: VirtualScrollDataLayout<T> };
@@ -55,6 +67,12 @@ export function VirtualScroll<T extends Record<string, any>>({
   useCache = true,
   cacheSize = 1000,
   isInfinite = false,
+  wrapperClasses = "",
+  containerClasses = "",
+  innerContainerClasses = "",
+  containerStyle = {},
+  wrapperStyle = {},
+  innerContainerStyle = {}
 }: VirtualScrollProps<T>) {
   const contRef = useRef<HTMLDivElement | null>(null);
   const measureRef = useRef<HTMLDivElement | null>(null);
@@ -96,6 +114,7 @@ export function VirtualScroll<T extends Record<string, any>>({
     );
   }, []);
 
+  /* Ensure a stable order for layout keys/entries */
   const layoutKeys = useMemo(() => Object.keys(layout), [layout]);
   const layoutEntries = useMemo(
     () => layoutKeys.map((k) => [k, layout[k]] as [string, VirtualScrollDataLayout<T>]),
@@ -109,12 +128,15 @@ export function VirtualScroll<T extends Record<string, any>>({
     const children = Array.from(measureRef.current.children) as HTMLElement[];
     const lh: Record<string, number> = {};
 
+    // Use the same stable order (layoutKeys) as rendering of bound nodes
     layoutKeys.forEach((k, i) => {
       lh[k] = children[i]?.getBoundingClientRect().height ?? 0;
     });
 
     setLayoutHeights(lh);
-    const entries = layoutEntries;
+
+    // Compute weighted defaultHeight using elemsCount as weights
+    const entries = layoutEntries; // [ [key, layoutObj], ... ]
     const values = entries.map(([k]) => lh[k] ?? 0);
     const totalElems = entries.reduce((s, [, l]) => s + (l.elemsCount || 0), 0);
 
@@ -129,6 +151,7 @@ export function VirtualScroll<T extends Record<string, any>>({
 
     setDefaultHeight(weightedDefault);
 
+    // Reset index-based caches so prefix + deltas recompute correctly
     heightsRef.current = {};
     prefixRef.current = [0];
     totalDeltaRef.current = 0;
@@ -290,15 +313,19 @@ export function VirtualScroll<T extends Record<string, any>>({
   /* -------------------- render -------------------- */
   if (!defaultHeight) {
     return (
-      <div ref={contRef} style={{ height: viewportHeight, overflowY: "auto" }}>
+      <div ref= { contRef } style = {{ height: viewportHeight, overflowY: "auto" }
+      }>
         <div
-          ref={measureRef}
-          style={{ position: "absolute", visibility: "hidden" }}
+          ref={ measureRef }
+          style = {{ position: "absolute", visibility: "hidden" }
+          }
         >
-          {/* render in the same stable order as layoutKeys */}
-          {layoutKeys.map((k) => (
-            <div key={k}>{layout[k].boundNode}</div>
-          ))}
+          {/* render in the same stable order as layoutKeys */ }
+          {
+            layoutKeys.map((k) => (
+              <div key= { k } > { layout[k].boundNode } </div>
+            ))
+          }
         </div>
       </div>
     );
@@ -320,29 +347,32 @@ export function VirtualScroll<T extends Record<string, any>>({
 
   return (
     <div
-      ref={contRef}
-      style={{ height: viewportHeight, overflowY: "auto", position: "relative" }}
+      ref= { contRef }
+      style = {{ height: viewportHeight, overflowY: "auto", position: "relative", ...wrapperStyle }}
+      className={wrapperClasses}
     >
-      <div style={{ height: totalHeight, position: "relative" }}>
-        {visible.map((index) => {
-          const item = itemsMap[index];
-          const entry = item ? layout[item.lKey] : layout[firstLayoutKey];
-          const top = topForIndex(index);
-          const h = heightsRef.current[index] ?? defaultHeight;
+      <div style={ { height: totalHeight, position: "relative", ...containerStyle } } className={containerClasses}>
+        {
+          visible.map((index) => {
+            const item = itemsMap[index];
+            const entry = item ? layout[item.lKey] : layout[firstLayoutKey];
+            const top = topForIndex(index);
+            const h = heightsRef.current[index] ?? defaultHeight;
 
-          return (
-            <div
-              key={index}
-              style={{ position: "absolute", top, height: h, left: 0, right: 0 }}
-            >
-              {!item ? (
-                <entry.skeleton style={{ height: "100%" }} />
-              ) : (
-                <entry.comp {...item.data} />
-              )}
-            </div>
-          );
-        })}
+            return (
+              <div
+                    key= { index }
+                    style = {{ position: "absolute", top, height: h, left: 0, right: 0, ...innerContainerStyle }}
+                    className={innerContainerClasses}
+              >
+                {!item ? (
+                  <entry.skeleton style= {{ height: "100%" }} />
+                ) : (
+                  <entry.comp { ...item.data } />
+                )}
+              </div>
+            );
+          })}
       </div>
     </div>
   );

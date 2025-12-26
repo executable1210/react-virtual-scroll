@@ -1,58 +1,67 @@
 import React, {
-    forwardRef,
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
+  forwardRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
-import { VirtualScroll, VirtualScrollDataLayout, TorrentData } from "./VirtualScroll";
+import { VirtualScroll, VirtualScrollDataLayout, TorrentData, VirtualScrollBaseProps } from "./VirtualScroll";
 
-export interface VirtualScrollRowProps<T extends Record<string, any>> {
-    torrent: (offset: number, size: number) => Promise<TorrentData<T>[]>;
-    layout: { key: string, layout: VirtualScrollDataLayout<T> }; // User's default component that is in a row, we should know bound here to calculate amount of elements should be in a row. layout.elemsCount is not count of rows here.
-    rowLayout?: { [key: string]: VirtualScrollDataLayout<T> }; // this one user layout is rendered instead of internal row. So it's just passed into VirtualScroll::layout. layout.elemsCount is count of rows. Do not handle it anyway's, it's user's responsibilty for this.
+export interface VirtualScrollRowProps<T extends Record<string, any>> extends VirtualScrollBaseProps {
+  torrent: (offset: number, size: number) => Promise<TorrentData<T>[]>;
+  layout: { key: string, layout: VirtualScrollDataLayout<T> }; // User's default component that is in a row, we should know bound here to calculate amount of elements should be in a row. layout.elemsCount is not count of rows here.
+  rowLayout?: { [key: string]: VirtualScrollDataLayout<T> }; // this one user layout is rendered instead of internal row. So it's just passed into VirtualScroll::layout. layout.elemsCount is count of rows. Do not handle it anyway's, it's user's responsibilty for this.
 
-    // just passed into VirtualScroll
-    pageSize?: number;
-    additionalHeight?: number;
-    overrideHeight?: number;
-    isInfinite?: boolean;
+  // just passed into VirtualScroll
+  pageSize?: number;
+  additionalHeight?: number;
+  overrideHeight?: number;
+  isInfinite?: boolean;
 
-    gapX?: number;
-    // NOTE: gapY is not just gap, it's paddingBottom of the internal row
-    gapY?: number;
+  gapX?: number;
+  // NOTE: gapY is not just gap, it's paddingBottom of the internal row
+  gapY?: number;
 
-    // just passed into VirtualScroll
-    useCache?: boolean;
-    cacheSize?: number;
+  // just passed into VirtualScroll
+  useCache?: boolean;
+  cacheSize?: number;
 }
 
 interface RowData<T> {
-    items: TorrentData<T>[];
+  items: TorrentData<T>[];
 }
 
 export function VirtualScrollRow<T extends Record<string, any>>({
-                                                                  torrent,
-                                                                  layout: itemLayout,
-                                                                  rowLayout = {},
-                                                                  pageSize = 20,
-                                                                  additionalHeight = 0,
-                                                                  isInfinite = false,
-                                                                  gapX = 0,
-                                                                  gapY = 0,
-                                                                  useCache = true,
-                                                                  cacheSize = 1000,
-                                                                }: VirtualScrollRowProps<T>) {
+  torrent,
+  layout: itemLayout,
+  rowLayout = {},
+  pageSize = 20,
+  additionalHeight = 0,
+  isInfinite = false,
+  gapX = 0,
+  gapY = 0,
+  useCache = true,
+  cacheSize = 1000,
+  wrapperClasses = "",
+  wrapperStyle = {},
+  containerClasses = "",
+  containerStyle = {},
+  innerContainerStyle,
+  innerContainerClasses
+}: VirtualScrollRowProps<T>) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const measureRef = useRef<HTMLDivElement | null>(null);
 
   const [containerEl, setContainerEl] = useState<HTMLDivElement | null>(null);
 
+  // measured width of one item (including padding/border as rendered)
   const [itemWidth, setItemWidth] = useState<number>(0);
+  // number of items that fit per row
   const [itemsPerRow, setItemsPerRow] = useState<number>(1);
   const [isReady, setIsReady] = useState(false);
 
+  // measure itemWidth and itemsPerRow; account for gapX
   useEffect(() => {
     if (!containerEl || !measureRef.current) return;
 
@@ -89,6 +98,7 @@ export function VirtualScrollRow<T extends Record<string, any>>({
     };
   }, [containerEl, gapX]);
 
+  // Component wrappers: wrap each user item in a fixed-width container to prevent overflow
   const RowComponent = useMemo(() => {
     const ItemComp = itemLayout.layout.comp;
     const Comp = forwardRef<HTMLDivElement, RowData<T>>(({ items }, ref) => (
@@ -124,6 +134,7 @@ export function VirtualScrollRow<T extends Record<string, any>>({
     return Comp;
   }, [itemLayout, gapX, gapY, itemWidth]);
 
+  // Row skeleton (wrap skeletons similarly)
   const RowSkeleton = useMemo(() => {
     const Skel = itemLayout.layout.skeleton;
     const Skeleton = ({ style }: { style?: React.CSSProperties }) => {
@@ -162,6 +173,7 @@ export function VirtualScrollRow<T extends Record<string, any>>({
   const fetchingRef = useRef(false);
 
   useEffect(() => {
+    // reset caches when key or itemsPerRow change
     rowsRef.current = [];
     pendingChunkRef.current = [];
     elementCursorRef.current = 0;
@@ -189,6 +201,7 @@ export function VirtualScrollRow<T extends Record<string, any>>({
           const offset = elementCursorRef.current;
           const resp = await torrent(offset, fetchElems);
 
+          // stale result check
           if (thisFetchId !== pendingFetchId.current) continue;
 
           elementCursorRef.current += resp.length;
@@ -218,11 +231,15 @@ export function VirtualScrollRow<T extends Record<string, any>>({
             if (rowsRef.current.length >= neededRows) break;
           }
 
+          // if response smaller than requested, finalize pending partial row
           if (resp.length < fetchElems && pendingChunkRef.current.length > 0) {
             rowsRef.current.push({ lKey: itemLayout.key, data: { items: pendingChunkRef.current } });
             pendingChunkRef.current = [];
           }
 
+          // Repair element cursor defensively: compute authoritative sum of consumed elements
+          // (1 for special rows, itemsPerRow for full item rows, or partial length)
+          // Build counts on the fly:
           let consumed = 0;
           for (const row of rowsRef.current) {
             if (row.lKey === itemLayout.key) {
@@ -231,8 +248,10 @@ export function VirtualScrollRow<T extends Record<string, any>>({
               consumed += 1;
             }
           }
+          // also add pending chunk elements that have been read from source but not yet pushed
           consumed += pendingChunkRef.current.length;
           if (elementCursorRef.current !== consumed) {
+            // align cursor
             elementCursorRef.current = consumed;
           }
         } finally {
@@ -302,9 +321,23 @@ export function VirtualScrollRow<T extends Record<string, any>>({
       </div>
 
       {!isReady ? (
-        <div style={{ padding: 20, color: "#666" }}> Loading layout...</div>
+        <div style={{ padding: 20, color: "#666" }}>Loading...</div>
       ) : (
-        <VirtualScroll layout={internalLayout as any} torrent={rowTorrent as any} pageSize={pageSize} additionalHeight={additionalHeight} isInfinite={isInfinite} />
+        <VirtualScroll
+          layout={internalLayout as any}
+          torrent={rowTorrent as any}
+          pageSize={pageSize}
+          additionalHeight={additionalHeight}
+          isInfinite={isInfinite}
+          useCache={useCache}
+          cacheSize={cacheSize}
+          containerClasses={containerClasses}
+          containerStyle={containerStyle}
+          wrapperClasses={wrapperClasses}
+          wrapperStyle={wrapperStyle}
+          innerContainerStyle={innerContainerStyle}
+          innerContainerClasses={innerContainerClasses}
+        />
       )}
     </div>
   );

@@ -34,9 +34,20 @@ export interface TorrentData<T> {
   data: T;
 };
 
+export interface VirtualScrollBaseProps {
+  wrapperClasses?: string;
+  wrapperStyle?: CSSProperties;
+
+  containerClasses?: string;
+  containerStyle?: CSSProperties;
+
+  innerContainerClasses?: string;
+  innerContainerStyle?: CSSProperties;
+}
+
 export interface VirtualScrollProps<
   T extends Record<string, any>
-> {
+> extends VirtualScrollBaseProps {
   // fetch callback
   torrent: (offset: number, size: number) => Promise<TorrentData<T>[]>;
 
@@ -58,7 +69,7 @@ export interface VirtualScrollProps<
   cacheSize?: number;
 }
 
-export interface VirtualScrollRowProps<T extends Record<string, any>> {
+export interface VirtualScrollRowProps<T extends Record<string, any>> extends VirtualScrollBaseProps  {
   torrent: (offset: number, size: number) => Promise<TorrentData<T>[]>;
   layout: { key: string, layout: VirtualScrollDataLayout<T> }; // User's default component that is in a row.
   rowLayout?: { [key: string]: VirtualScrollDataLayout<T> }; // Custom row layouts
